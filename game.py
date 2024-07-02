@@ -16,6 +16,7 @@ pygame.display.set_caption('Flappy Bird')
 ground_scroll = 0
 scroll_speed = 4
 
+
 #load images
 bg = pygame.image.load('img/bg.png') #background img
 ground_img = pygame.image.load('img/ground.png') #ground img
@@ -32,8 +33,33 @@ class Bird(pygame.sprite.Sprite):
             self.image = self.images[self.index]
         self.rect = self.image.get_rect()
         self.rect.center = [x,y]
+        self.vel = 0
+        self.clicked = False
+        self.air = False
 
     def update(self):
+        #gravity
+        self.vel += 0.5
+        if self.vel > 8:#limits the acceleration
+            self.vel = 8
+        if self.rect.bottom < 768: #creates a limit to the bottom
+            self.rect.y += int(self.vel) #this adds it to the y co-ordinates of the bird
+
+        #jump mouse click
+        if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+            self.clicked = True
+            self.vel = -10
+        if pygame.mouse.get_pressed()[0] == 0:
+            self.clicked = False
+
+        #jump spacebar
+        key = pygame.key.get_pressed()   
+        if key[pygame.K_SPACE] and self.air==False:
+            self.vel = -10
+            self.air = True
+        if not key[pygame.K_SPACE] and self.air==True:
+            self.air = False
+
 
         #handle the animation
         self.counter += 1
