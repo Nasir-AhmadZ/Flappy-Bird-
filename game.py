@@ -1,6 +1,7 @@
 from typing import Any
 import pygame
 from pygame.locals import *
+import random
 
 pygame.init()
 
@@ -101,6 +102,8 @@ class Pipe(pygame.sprite.Sprite):
     
     def update(self):
         self.rect.x -= scroll_speed
+        if self.rect.right < 0: #kills the pipe once its off the screen
+            self.kill()
 
 
 bird_group = pygame.sprite.Group() #creates a group class for the bird
@@ -122,23 +125,28 @@ while run:
     bird_group.draw(screen)
     bird_group.update()
     pipe_group.draw(screen)
-    pipe_group.update()
+    
 
     #draw the ground
     screen.blit(ground_img,(ground_scroll,768))#this puts the ground onto the screen
+
+    #looks for collision
+    if pygame.sprite.groupcollide(bird_group,pipe_group,False,False) or flappy.rect.top < 0:
+        game_over = True
 
     #check if bird has hit the ground
     if flappy.rect.bottom > 768:
         game_over = True
         flying = False
 
-    if game_over == False:
+    if game_over == False and flying == True:
 
         #generate new pipes
         time_now =  pygame.time.get_ticks()
         if time_now - last_pipe > pipe_frequency:
-            pippy = Pipe(screen_width,int(screen_heigt/2,),-1) #bottom pipe
-            pipboy =Pipe(screen_width,int(screen_heigt/2),1) #top pipe
+            pipe_height = random.randint(-100,100)
+            pippy = Pipe(screen_width,int(screen_heigt/2)+pipe_height,-1) #bottom pipe
+            pipboy =Pipe(screen_width,int(screen_heigt/2)+pipe_height,1) #top pipe
             pipe_group.add(pippy) #add pippy object to the pipe group
             pipe_group.add(pipboy)
             last_pipe = time_now
@@ -147,6 +155,7 @@ while run:
         ground_scroll -= scroll_speed
         if abs(ground_scroll)>35: #fakes the effect of scrolling background
             ground_scroll=0
+        pipe_group.update()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
