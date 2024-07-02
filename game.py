@@ -1,3 +1,4 @@
+from typing import Any
 import pygame
 from pygame.locals import *
 
@@ -16,7 +17,10 @@ pygame.display.set_caption('Flappy Bird')
 ground_scroll = 0
 scroll_speed = 4
 flying = False
-gameover = False
+game_over = False
+pipe_gap = 150
+pipe_frequency = 1500 #milliseconds
+last_pipe = pygame.time.get_ticks() - pipe_frequency
 
 
 #load images
@@ -48,7 +52,7 @@ class Bird(pygame.sprite.Sprite):
             if self.rect.bottom < 768: #creates a limit to the bottom
                 self.rect.y += int(self.vel) #this adds it to the y co-ordinates of the bird
 
-        if gameover == False:
+        if game_over == False:
             #jump mouse click
             if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
                 self.clicked = True
@@ -83,14 +87,27 @@ class Bird(pygame.sprite.Sprite):
         else:
             self.image = pygame.transform.rotate(self.images[self.index],-90)
 
+class Pipe(pygame.sprite.Sprite):
+    def __init__(self,x,y,position) :
+        pygame.sprite.Sprite.__init__(self) 
+        self.image = pygame.image.load('img/pipe.png') 
+        self.rect = self.image.get_rect()
+        #position 1 is from the top, -1 is from the bottom
+        if position == 1:
+            self.image = pygame.transform.flip(self.image,False,True)
+            self.rect.bottomleft = [x,y - int(pipe_gap/2)]
+        if position == -1:
+            self.rect.topleft = [x,y + int(pipe_gap/2)]
     
+    def update(self):
+        self.rect.x -= scroll_speed
 
-bird_group = pygame.sprite.Group() #creates a group class
 
-flappy = Bird(100,int(screen_heigt/2)) #creates object
+bird_group = pygame.sprite.Group() #creates a group class for the bird
+pipe_group = pygame.sprite.Group() #creates a group class for the pipes
 
+flappy = Bird(100,int(screen_heigt/2)) #creates bird object
 bird_group.add(flappy) #add object into the bird group
-
 
 
 
@@ -104,16 +121,28 @@ while run:
 
     bird_group.draw(screen)
     bird_group.update()
+    pipe_group.draw(screen)
+    pipe_group.update()
 
     #draw the ground
     screen.blit(ground_img,(ground_scroll,768))#this puts the ground onto the screen
 
     #check if bird has hit the ground
     if flappy.rect.bottom > 768:
-        gameover = True
+        game_over = True
         flying = False
 
-    if gameover == False:
+    if game_over == False:
+
+        #generate new pipes
+        time_now =  pygame.time.get_ticks()
+        if time_now - last_pipe > pipe_frequency:
+            pippy = Pipe(screen_width,int(screen_heigt/2,),-1) #bottom pipe
+            pipboy =Pipe(screen_width,int(screen_heigt/2),1) #top pipe
+            pipe_group.add(pippy) #add pippy object to the pipe group
+            pipe_group.add(pipboy)
+            last_pipe = time_now
+
         #scroll the ground
         ground_scroll -= scroll_speed
         if abs(ground_scroll)>35: #fakes the effect of scrolling background
@@ -122,7 +151,7 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-        if event.type == pygame.MOUSEBUTTONDOWN and flying == False and gameover == False or event.type == pygame.KEYDOWN and flying == False and gameover == False:
+        if event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over == False or event.type == pygame.KEYDOWN and flying == False and game_over == False:
             flying = True
 
     pygame.display.update()#allow the screen to update and display
